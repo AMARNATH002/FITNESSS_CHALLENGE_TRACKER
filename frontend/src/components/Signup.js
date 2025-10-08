@@ -36,7 +36,7 @@ function Signup() {
         accountRole: formData.accountRole,
         ...(formData.accountRole === 'User' && formData.fitnessLevel ? { fitnessLevel: formData.fitnessLevel } : {})
       };
-      const response = await axios.post("http://localhost:5000/api/users/signup", payload);
+      const response = await axios.post("/api/users/signup", payload);
       alert("Signup successful! Welcome to your fitness journey! 💪");
       navigate("/login");
     } catch (error) {

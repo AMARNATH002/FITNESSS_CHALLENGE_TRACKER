@@ -20,7 +20,7 @@ function Analytics() {
     try {
       const token = sessionStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:5000/api/users/${userId}/analytics`,
+        `/api/users/${userId}/analytics`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAnalytics(response.data);

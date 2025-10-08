@@ -35,13 +35,13 @@ function WorkoutScheduler() {
       
       // Load all schedules
       const [schedulesRes, todayRes, upcomingRes] = await Promise.all([
-        axios.get(`http://localhost:5000/api/users/${userId}/schedules`, {
+        axios.get(`/api/users/${userId}/schedules`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`http://localhost:5000/api/users/${userId}/schedules/today`, {
+        axios.get(`/api/users/${userId}/schedules/today`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`http://localhost:5000/api/users/${userId}/schedules/upcoming`, {
+        axios.get(`/api/users/${userId}/schedules/upcoming`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -63,7 +63,7 @@ function WorkoutScheduler() {
     try {
       const token = sessionStorage.getItem('token');
       await axios.post(
-        `http://localhost:5000/api/users/${user._id}/schedules`,
+        `/api/users/${user._id}/schedules`,
         newSchedule,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -91,7 +91,7 @@ function WorkoutScheduler() {
     try {
       const token = sessionStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/users/${user._id}/schedules/${scheduleId}`,
+        `/api/users/${user._id}/schedules/${scheduleId}`,
         updates,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -114,7 +114,7 @@ function WorkoutScheduler() {
     try {
       const token = sessionStorage.getItem('token');
       await axios.delete(
-        `http://localhost:5000/api/users/${user._id}/schedules/${scheduleId}`,
+        `/api/users/${user._id}/schedules/${scheduleId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import './AdminDashboard.css';
 import WorkoutVideoModal from './WorkoutVideoModal';
@@ -16,15 +16,11 @@ function AdminDashboard() {
   const token = sessionStorage.getItem('token');
 
   const api = axios.create({
-    baseURL: 'http://localhost:5000',
+    baseURL: '',
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [u, w, d] = await Promise.all([
@@ -42,7 +38,11 @@ function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const seedWorkouts = async () => {
     try {

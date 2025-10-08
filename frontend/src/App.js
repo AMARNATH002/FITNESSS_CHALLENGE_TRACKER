@@ -11,17 +11,11 @@ import Goals from "./components/Goals";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
-// Import images
-import ronne2Image from "./assets/images/ronne2.webp";
-import ronnie1Image from "./assets/images/ronnie1.avif";
-import ronnieImage from "./assets/images/ronnie.png";
-import avatarImage from "./assets/images/avatar_1568224780.png";
-
-
+// ---------------- Home Component ----------------
 function Home() {
   return (
     <div className="home-page">
-      {/* Welcome Section - Matching Image */}
+      {/* Welcome Section */}
       <div className="welcome-section">
         <h1>Welcome to <span className="highlight">Fitness Tracker</span></h1>
         <p className="tagline">Track your workouts, stay consistent, and challenge yourself daily.</p>
@@ -32,7 +26,7 @@ function Home() {
         </div>
       </div>
 
-      {/* Program Level Cards - Matching Image */}
+      {/* Program Level Cards */}
       <div className="programs-section">
         <div className="programs-grid">
           <div className="program-card">
@@ -55,7 +49,6 @@ function Home() {
         </div>
       </div>
     </div>
-    
   );
 }
 
@@ -76,31 +69,12 @@ function About() {
   );
 }
 
-// ---------------- Contact Component ----------------
-function Contact() {
-  return (
-    <div className="simple-page">
-      <div className="page-container">
-        <h1 className="page-title">Contact Us</h1>
-        <p className="page-description">
-          Get in touch with us for support and questions.
-        </p>
-        <div className="simple-content">
-          <p>Email: support@fitnesstracker.com</p>
-          <p>Phone: +91 98765 43210</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ---------------- App Component ----------------
 function App() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(!!sessionStorage.getItem("user"));
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const user = React.useMemo(() => {
     try { return JSON.parse(sessionStorage.getItem('user') || 'null'); } catch { return null; }
-  }, [isLoggedIn]);
+  }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
@@ -111,11 +85,9 @@ function App() {
   return (
     <Router>
       <div className="app-container">
-        {/* Simple Navbar - Matching Image */}
+        {/* Simple Navbar */}
         <nav className="simple-navbar">
           <div className="navbar-content">
-            {/* Top Left Logo */}
-            
             <div className="navbar-left">
               <h1 className="navbar-title">FITNESS CHALLENGE TRACKER</h1>
               <p className="navbar-subtitle">KEC</p>
@@ -138,12 +110,9 @@ function App() {
                 <Link to="/login" onClick={handleLogout} className="nav-link">LOGOUT</Link>
               )}
             </div>
-            {/* YEAH BUDDY Text */}
             <div className="navbar-yeah-buddy">
               <span className="yeah-buddy-text">LIGHT WEIGHT👑</span>
             </div>
-            {/* Top Right Round Logo */}
-            
           </div>
         </nav>
 

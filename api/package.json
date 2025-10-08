@@ -1,0 +1,11 @@
+{
+  "name": "fitness-tracker-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {},
+  "dependencies": {
+    "mongoose": "^8.17.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

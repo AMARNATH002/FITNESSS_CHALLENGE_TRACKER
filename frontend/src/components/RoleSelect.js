@@ -33,7 +33,7 @@ function RoleSelect() {
         
         // Update in database
         await axios.put(
-          `http://localhost:5000/api/users/${user._id}`,
+          `/api/users/${user._id}`,
           { fitnessLevel },
           { headers: { Authorization: `Bearer ${token}` } }
         );

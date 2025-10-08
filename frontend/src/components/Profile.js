@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import "./Profile.css";
@@ -12,6 +12,37 @@ function Profile() {
     completedWorkouts: 0,
     streak: 0,
   });
+
+  const calculateCompletedDays = (completedWorkouts, role) => {
+    // Simple calculation based on number of completed workouts
+    return completedWorkouts.length;
+  };
+
+  const loadUserProgress = useCallback(async (userId, role) => {
+    try {
+      const token = sessionStorage.getItem('token');
+      const response = await axios.get(
+        `/api/users/${userId}/workouts`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const workouts = response.data || [];
+      const completedWorkouts = workouts.filter((w) => w.completed === true);
+
+      // Calculate actual days completed based on workout phases
+      const totalDays = getTotalDaysByLevel(role);
+      const completedDays = calculateCompletedDays(completedWorkouts, role);
+      const currentDay = Math.min(completedDays + 1, totalDays);
+
+      setChallengeProgress({
+        currentDay: currentDay,
+        totalDays: totalDays,
+        completedWorkouts: completedWorkouts.length,
+        streak: calculateStreak(workouts),
+      });
+    } catch (error) {
+      console.error("Error loading user progress:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const userData = sessionStorage.getItem("user");
@@ -30,44 +61,11 @@ function Profile() {
 
       loadUserProgress(userObj._id, userObj.fitnessLevel || userObj.role);
     }
-  }, []);
-
-  // Refresh progress when user navigates to profile page
-  useEffect(() => {
-    if (user && location.pathname === '/profile') {
-      loadUserProgress(user._id, user.fitnessLevel || user.role);
-    }
-  }, [location.pathname, user]);
-
-  const loadUserProgress = async (userId, role) => {
-    try {
-      const token = sessionStorage.getItem('token');
-      const response = await axios.get(
-        `http://localhost:5000/api/users/${userId}/workouts`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const workouts = response.data || [];
-      const completedWorkouts = workouts.filter((w) => w.completed === true);
-      
-      // Calculate actual days completed based on workout phases
-      const totalDays = getTotalDaysByLevel(role);
-      const completedDays = calculateCompletedDays(completedWorkouts, role);
-      const currentDay = Math.min(completedDays + 1, totalDays);
-
-      setChallengeProgress({
-        currentDay: currentDay,
-        totalDays: totalDays,
-        completedWorkouts: completedDays,
-        streak: calculateStreak(workouts),
-      });
-    } catch (error) {
-      console.error("Error loading user progress:", error);
-    }
-  };
+  }, [loadUserProgress]);
 
   const calculateStreak = (workouts) => {
     if (!workouts || workouts.length === 0) return 0;
-    
+
     const completedWorkouts = workouts.filter((w) => w.completed);
     if (completedWorkouts.length === 0) return 0;
 
@@ -111,24 +109,6 @@ function Profile() {
       case "Master": return 60;
       default: return 30;
     }
-  };
-
-  const calculateCompletedDays = (completedWorkouts, role) => {
-    // Count unique workout entries (each click = 1 day)
-    // Group by date to count actual days worked out
-    const uniqueDates = new Set();
-    
-    completedWorkouts.forEach(workout => {
-      const date = new Date(workout.date).toDateString();
-      uniqueDates.add(date);
-    });
-    
-    return uniqueDates.size;
-  };
-
-  const getProgressPercentage = () => {
-    if (challengeProgress.totalDays === 0) return 0;
-    return (challengeProgress.completedWorkouts / challengeProgress.totalDays) * 100;
   };
 
   if (!user) {

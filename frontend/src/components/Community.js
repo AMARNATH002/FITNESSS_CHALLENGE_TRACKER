@@ -24,13 +24,13 @@ function Community() {
       const token = sessionStorage.getItem('token');
       
       const [leaderboardRes, rankingRes, feedRes] = await Promise.all([
-        axios.get(`http://localhost:5000/api/users/leaderboard?period=${selectedPeriod}`, {
+        axios.get(`/api/users/leaderboard?period=${selectedPeriod}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`http://localhost:5000/api/users/${userId}/ranking?period=${selectedPeriod}`, {
+        axios.get(`/api/users/${userId}/ranking?period=${selectedPeriod}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`http://localhost:5000/api/users/community/feed`, {
+        axios.get(`/api/users/community/feed`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);

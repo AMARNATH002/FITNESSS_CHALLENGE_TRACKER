@@ -128,3 +128,5 @@ frontend/dist/
 *.swp
 *.swo
 *~
+
+.vercel

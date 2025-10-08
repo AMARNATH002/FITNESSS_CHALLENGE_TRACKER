@@ -3,14 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import WorkoutVideoModal from './WorkoutVideoModal';
 
-// Import existing images
-import pushupImg from "../assets/images/pushup.jpg";
-import squatImg from "../assets/images/squat.jpg";
-import plankImg from "../assets/images/plank.jpg";
-import burpeesImg from "../assets/images/burpees.jpg";
-import pullupImg from "../assets/images/pullup.jpg";
-import lungesImg from "../assets/images/lunges.jpg";
-
 // Reliable workout images from Pexels (working URLs)
 const workoutImages = {
   // Beginner workouts
@@ -130,7 +122,7 @@ function Challenges() {
     try {
       const token = sessionStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:5000/api/users/${userId}/workouts`,
+        `/api/users/${userId}/workouts`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const workouts = response.data || [];
@@ -200,7 +192,7 @@ function Challenges() {
       // Save workout to database
       const token = sessionStorage.getItem('token');
       await axios.post(
-        `http://localhost:5000/api/users/${user._id}/workouts`,
+        `/api/users/${user._id}/workouts`,
         {
           exercise,
           sets,
@@ -214,7 +206,7 @@ function Challenges() {
 
       // Update streak after workout completion
       await axios.post(
-        `http://localhost:5000/api/users/${user._id}/update-streak`,
+        `/api/users/${user._id}/update-streak`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

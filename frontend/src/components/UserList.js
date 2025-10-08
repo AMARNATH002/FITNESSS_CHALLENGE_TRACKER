@@ -15,7 +15,7 @@ function UserList() {
     }
     
     setLoading(true);
-    fetch("http://localhost:5000/api/users/community", { headers: { Authorization: `Bearer ${token}` } })
+    fetch("/api/users/community", { headers: { Authorization: `Bearer ${token}` } })
       .then(async (res) => {
         if (!res.ok) {
           throw new Error('Failed to fetch users');

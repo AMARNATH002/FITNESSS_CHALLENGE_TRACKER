@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Login() {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -16,13 +15,13 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/users/login", formData);
+      const res = await axios.post("/api/users/login", formData);
       alert("Login successful! Welcome back! 💪");
       sessionStorage.setItem('user', JSON.stringify(res.data.user));
       sessionStorage.setItem('token', res.data.token);
-      
-      
-      const next = res.data.user?.accountRole === 'Admin' ? '/admin' : 
+
+
+      const next = res.data.user?.accountRole === 'Admin' ? '/admin' :
                    (res.data.user?.fitnessLevel ? '/challenges' : '/role');
       window.location.href = next;
     } catch (error) {
@@ -50,7 +49,7 @@ function Login() {
               className="form-input"
             />
           </div>
-          
+
           <div className="form-group">
             <input
               type="password"
@@ -62,7 +61,7 @@ function Login() {
               className="form-input"
             />
           </div>
-          
+
           <button type="submit" className="auth-btn">GET BACK TO TRAINING</button>
         </form>
         <div style={{ marginTop: "12px", textAlign: "center" }}>

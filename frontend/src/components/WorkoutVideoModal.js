@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './WorkoutVideoModal.css';
 
 function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
@@ -7,14 +7,7 @@ function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videos, setVideos] = useState([]);
 
-  // Short workout explanation videos (30s–1m) - curated IDs
   const workoutVideos = {
-    'pushups': {
-      id: 'IODxDxX7oi4',
-      title: 'How to Do Push-ups Correctly',
-      duration: '0:45',
-      description: 'Learn proper push-up form and technique'
-    },
     'squats': {
       id: 'YaXPRqUwItQ',
       title: 'Perfect Squat Form',
@@ -126,20 +119,14 @@ function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
     { keywords: ['kettlebell'], video: { id: 'rZ3k8JrjU1Q', title: 'Kettlebell Swing Basics', duration: '0:40', description: 'Safe kettlebell swing technique' } },
   ];
 
-  useEffect(() => {
-    if (isOpen && workoutName) {
-      loadWorkoutVideos();
-    }
-  }, [isOpen, workoutName]);
-
-  const loadWorkoutVideos = () => {
+  const loadWorkoutVideos = useCallback(() => {
     setLoading(true);
     setError(null);
-    
+
     // Find matching videos for the workout
     const normalizedName = workoutName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
     const matchingVideos = [];
-    
+
     // Check for exact match first
     if (workoutVideos[normalizedName]) {
       matchingVideos.push(workoutVideos[normalizedName]);
@@ -157,18 +144,24 @@ function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
         }
       });
     }
-    
+
     // Remove duplicates
-    const uniqueVideos = matchingVideos.filter((video, index, self) => 
+    const uniqueVideos = matchingVideos.filter((video, index, self) =>
       index === self.findIndex(v => v.id === video.id)
     );
-    
+
     // If no matches found, default to a general full-body form video
-    if (uniqueVideos.length === 0) uniqueVideos.push(workoutVideos['pushups']);
-    
+    if (uniqueVideos.length === 0) uniqueVideos.push(workoutVideos['squats']);
+
     setVideos(uniqueVideos);
     setLoading(false);
-  };
+  }, [workoutName, workoutVideos, keywordVideoMap]);
+
+  useEffect(() => {
+    if (isOpen && workoutName) {
+      loadWorkoutVideos();
+    }
+  }, [isOpen, workoutName, loadWorkoutVideos]);
 
   const handleVideoSelect = (video) => {
     setSelectedVideo(video);

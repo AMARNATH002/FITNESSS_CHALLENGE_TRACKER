@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './Goals.css';
 
@@ -32,20 +32,11 @@ function Goals() {
     priority: 'medium'
   });
 
-  useEffect(() => {
-    const userData = sessionStorage.getItem('user');
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      setUser(parsed);
-      loadGoals(parsed._id);
-    }
-  }, []);
-
-  const loadGoals = async (userId) => {
+  const loadGoals = useCallback(async (userId) => {
     try {
       const token = sessionStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:5000/api/users/${userId}/goals`,
+        `/api/users/${userId}/goals`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = response.data || {};
@@ -60,7 +51,16 @@ function Goals() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const userData = sessionStorage.getItem('user');
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      setUser(parsed);
+      loadGoals(parsed._id);
+    }
+  }, [loadGoals]);
 
   const updateGoals = async () => {
     if (!user) return;
@@ -69,7 +69,7 @@ function Goals() {
     try {
       const token = sessionStorage.getItem('token');
       await axios.put(
-        `http://localhost:5000/api/users/${user._id}/goals`,
+        `/api/users/${user._id}/goals`,
         {
           dailyWorkouts: goals.dailyWorkouts,
           weeklyWorkouts: goals.weeklyWorkouts,
