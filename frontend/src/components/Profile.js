@@ -13,56 +13,6 @@ function Profile() {
     streak: 0,
   });
 
-  const calculateCompletedDays = (completedWorkouts, role) => {
-    // Simple calculation based on number of completed workouts
-    return completedWorkouts.length;
-  };
-
-  const loadUserProgress = useCallback(async (userId, role) => {
-    try {
-      const token = sessionStorage.getItem('token');
-      const response = await axios.get(
-        `/api/users/${userId}/workouts`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const workouts = response.data || [];
-      const completedWorkouts = workouts.filter((w) => w.completed === true);
-
-      // Calculate actual days completed based on workout phases
-      const totalDays = getTotalDaysByLevel(role);
-      const completedDays = calculateCompletedDays(completedWorkouts, role);
-      const currentDay = Math.min(completedDays + 1, totalDays);
-
-      setChallengeProgress({
-        currentDay: currentDay,
-        totalDays: totalDays,
-        completedWorkouts: completedWorkouts.length,
-        streak: calculateStreak(workouts),
-      });
-    } catch (error) {
-      console.error("Error loading user progress:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    const userData = sessionStorage.getItem("user");
-    if (userData) {
-      const userObj = JSON.parse(userData);
-      setUser(userObj);
-      if (userObj.accountRole === 'Admin') {
-        window.location.href = '/admin';
-        return;
-      }
-
-      setChallengeProgress((prev) => ({
-        ...prev,
-        totalDays: getTotalDaysByLevel(userObj.fitnessLevel || userObj.role),
-      }));
-
-      loadUserProgress(userObj._id, userObj.fitnessLevel || userObj.role);
-    }
-  }, [loadUserProgress]);
-
   const calculateStreak = (workouts) => {
     if (!workouts || workouts.length === 0) return 0;
 
@@ -111,6 +61,54 @@ function Profile() {
     }
   };
 
+  const calculateCompletedDays = (completedWorkouts, role) => {
+    // Simple calculation based on number of completed workouts
+    return completedWorkouts.length;
+  };
+
+  const loadUserProgress = useCallback(async (userId, role) => {
+    try {
+      const token = sessionStorage.getItem('token');
+      const response = await axios.get(
+        `/api/users/${userId}/workouts`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const workouts = response.data || [];
+      const completedWorkouts = workouts.filter((w) => w.completed === true);
+
+      // Calculate actual days completed based on workout phases
+      const totalDays = getTotalDaysByLevel(role);
+      const completedDays = calculateCompletedDays(completedWorkouts, role);
+      const currentDay = Math.min(completedDays + 1, totalDays);
+
+      setChallengeProgress({
+        currentDay: currentDay,
+        totalDays: totalDays,
+        completedWorkouts: completedWorkouts.length,
+        streak: calculateStreak(workouts),
+      });
+    } catch (error) {
+      console.error("Error loading user progress:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const userData = sessionStorage.getItem("user");
+    if (userData) {
+      const userObj = JSON.parse(userData);
+      setUser(userObj);
+      if (userObj.accountRole === 'Admin') {
+        window.location.href = '/admin';
+        return;
+      }
+
+      setChallengeProgress((prev) => ({
+        ...prev,
+        totalDays: getTotalDaysByLevel(userObj.fitnessLevel || userObj.role),
+      }));
+
+      loadUserProgress(userObj._id, userObj.fitnessLevel || userObj.role);
+    }
   if (!user) {
     return (
       <div className="profile-container">
