@@ -15,10 +15,11 @@ function AdminDashboard() {
   const [selectedWorkoutName, setSelectedWorkoutName] = useState('');
   const token = sessionStorage.getItem('token');
 
-  const api = axios.create({
+  // Create API instance outside component to prevent recreation
+  const api = React.useMemo(() => axios.create({
     baseURL: '',
     headers: { Authorization: `Bearer ${token}` }
-  });
+  }), [token]);
 
   const loadData = useCallback(async () => {
     try {

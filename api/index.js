@@ -59,7 +59,29 @@ const workoutScheduleSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Workout completion tracking model
+const workoutCompletionSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  exercise: { type: String, required: true },
+  sets: { type: Number, required: true },
+  reps: { type: Number, required: true },
+  completed: { type: Boolean, default: true },
+  date: { type: Date, required: true },
+  caloriesPerSet: { type: Number, default: 15 },
+  createdAt: { type: Date, default: Date.now }
+});
+
 const WorkoutSchedule = mongoose.models.WorkoutSchedule || mongoose.model('WorkoutSchedule', workoutScheduleSchema);
+
+// User model
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  accountRole: { type: String, default: 'User' },
+  fitnessLevel: { type: String, default: 'Beginner' },
+  createdAt: { type: Date, default: Date.now }
+});
 
 // Main API router
 module.exports = async (req, res) => {
@@ -149,11 +171,124 @@ module.exports = async (req, res) => {
         return res.status(201).json(savedSchedule);
       }
 
+    // Handle workout completion routes like /api/users/[id]/workouts
+    if (pathname.match(/^\/api\/users\/[^\/]+\/workouts$/)) {
+      const pathParts = pathname.split('/');
+      const userId = pathParts[pathParts.length - 2];
+
+      // Authenticate user
+      const decoded = authenticate(req);
+      if (!decoded) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      if (req.method === 'GET') {
+        // Get all workout completions for the user
+        const workouts = await WorkoutCompletion.find({ userId: userId }).sort({ date: -1 });
+        return res.status(200).json(workouts);
+      }
+
+      if (req.method === 'POST') {
+        // Record a new workout completion
+        const { exercise, sets, reps, completed, date, caloriesPerSet } = req.body;
+
+        if (!exercise || !sets || !reps) {
+          return res.status(400).json({ error: 'Exercise, sets, and reps are required' });
+        }
+
+        const newWorkout = new WorkoutCompletion({
+          userId: userId,
+          exercise,
+          sets,
+          reps,
+          completed: completed || true,
+          date: date ? new Date(date) : new Date(),
+          caloriesPerSet: caloriesPerSet || 15
+        });
+
+        const savedWorkout = await newWorkout.save();
+        return res.status(201).json(savedWorkout);
+      }
+
       return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Handle user streak updates like /api/users/[id]/update-streak
+    if (pathname.match(/^\/api\/users\/[^\/]+\/update-streak$/)) {
+      const pathParts = pathname.split('/');
+      const userId = pathParts[pathParts.length - 2];
+
+      // Authenticate user
+      const decoded = authenticate(req);
+      if (!decoded) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      if (req.method === 'POST') {
+        // Update user streak (this would typically update a User model field)
+        // For now, return success
+        return res.status(200).json({ message: 'Streak updated successfully' });
+      }
+
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Handle community data routes like /api/community
+    if (pathname.startsWith('/api/community')) {
+      if (req.method === 'GET') {
+        // Return community stats and leaderboard
+        const totalUsers = await mongoose.models.User?.countDocuments() || 0;
+        const totalWorkouts = await WorkoutCompletion.countDocuments() || 0;
+
+        return res.status(200).json({
+          totalUsers,
+          totalWorkouts,
+          message: 'Community data loaded successfully'
+        });
+      }
+
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Handle admin data routes like /api/admin/users, /api/admin/workouts, etc.
+    if (pathname.startsWith('/api/admin/')) {
+      // Authenticate admin user
+      const decoded = authenticate(req);
+      if (!decoded) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Check if user is admin (you may want to add an admin field to your User model)
+      const User = mongoose.models.User;
+      if (User) {
+        const currentUser = await User.findById(decoded.id);
+        if (!currentUser || currentUser.role !== 'Admin') {
+          return res.status(403).json({ error: 'Admin access required' });
+        }
+      }
+
+      if (pathname === '/api/admin/users' && req.method === 'GET') {
+        const User = mongoose.models.User;
+        const users = await User.find({}).select('-password');
+        return res.status(200).json(users);
+      }
+
+      if (pathname === '/api/admin/workouts' && req.method === 'GET') {
+        const workouts = await WorkoutCompletion.find({}).populate('userId', 'name email');
+        return res.status(200).json(workouts);
+      }
+
+      if (pathname === '/api/admin/diet-plans' && req.method === 'GET') {
+        // Return empty array for now - implement diet plans model if needed
+        return res.status(200).json([]);
+      }
+
+      return res.status(404).json({ error: 'Admin endpoint not found' });
     }
 
     // Default 404 for unmatched routes
     res.status(404).json({ error: 'NOT_FOUND', message: 'Endpoint not found' });
+  }
 
   } catch (error) {
     console.error('API error:', error);

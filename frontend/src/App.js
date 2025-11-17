@@ -7,11 +7,12 @@ import Login from "./components/Login";
 import RoleSelect from "./components/RoleSelect";
 import Challenges from "./components/Challenges";
 import Profile from "./components/Profile";
-import Goals from "./components/Goals";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Contact from "./components/Contact";
+import Goals from "./components/Goals";
 import "./App.css";
 
-// ---------------- Home Component ----------------
+
 function Home() {
   return (
     <div className="home-page">
@@ -52,7 +53,7 @@ function Home() {
   );
 }
 
-// ---------------- About Component ----------------
+
 function About() {
   return (
     <div className="simple-page">
@@ -69,7 +70,7 @@ function About() {
   );
 }
 
-// ---------------- App Component ----------------
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(!!sessionStorage.getItem("user"));
   const user = React.useMemo(() => {
