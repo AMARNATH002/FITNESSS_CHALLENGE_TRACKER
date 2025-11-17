@@ -12,20 +12,31 @@ app.use(express.json());
 // Routes
 const userRoutes = require('./routes/users');
 app.use('/api/users', userRoutes);
+
 const adminRoutes = require('./routes/admin');
 app.use('/api/admin', adminRoutes);
 
+// TEST ROUTE (IMPORTANT FOR RAILWAY)
+app.get("/", (req, res) => {
+  res.send("🚀 Fitness Challenge Tracker Backend is running on Railway!");
+});
+
+app.get("/api/test", (req, res) => {
+  res.json({ message: "API Test OK! Backend connected successfully." });
+});
+
+// MongoDB
 const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/fitness-tracker";
 
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-.then(() => console.log("MongoDB connected - Namma Dhaan" ))
+.then(() => console.log("MongoDB connected - Namma Dhaan"))
 .catch(err => {
-  console.error(" MongoDB connection error:", err);
-  console.log(" Make sure MongoDB is running or use MongoDB Atlas");
-  console.log(" You can also set MONGO_URI in your .env file");
+  console.error("MongoDB connection error:", err);
+  console.log("Make sure MongoDB is running or use MongoDB Atlas");
+  console.log("You can also set MONGO_URI in your .env file");
 });
 
 // Start server
