@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
 import axios from "axios";
 import "./Profile.css";
 
 function Profile() {
-  const location = useLocation();
   const [user, setUser] = useState(null);
   const [challengeProgress, setChallengeProgress] = useState({
     currentDay: 1,

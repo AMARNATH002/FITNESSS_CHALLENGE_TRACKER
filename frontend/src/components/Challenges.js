@@ -89,7 +89,7 @@ const getImageForExercise = (name) => {
 
 const toTitle = (s = '') => s
   .toString()
-  .replace(/[\-_]+/g, ' ')
+  .replace(/[-_]+/g, ' ')
   .toLowerCase()
   .replace(/\b\w/g, (c) => c.toUpperCase());
 

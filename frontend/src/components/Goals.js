@@ -2,20 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './Goals.css';
 
-function Goals() {
-  const defaultGoals = {
-    dailyWorkouts: 1,
-    weeklyWorkouts: 5,
-    monthlyWorkouts: 20,
-    currentStreak: 0,
-    longestStreak: 0,
-    smartGoals: [],
-    milestones: [],
-    targetWeight: null,
-    targetBodyFat: null,
-    targetMuscleMass: null
-  };
+const defaultGoals = {
+  dailyWorkouts: 1,
+  weeklyWorkouts: 5,
+  monthlyWorkouts: 20,
+  currentStreak: 0,
+  longestStreak: 0,
+  smartGoals: [],
+  milestones: [],
+  targetWeight: null,
+  targetBodyFat: null,
+  targetMuscleMass: null
+};
 
+function Goals() {
   const [goals, setGoals] = useState(defaultGoals);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

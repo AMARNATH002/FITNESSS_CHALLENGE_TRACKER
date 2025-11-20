@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './WorkoutVideoModal.css';
 
-function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedVideo, setSelectedVideo] = useState(null);
-  const [videos, setVideos] = useState([]);
-
-  const workoutVideos = {
+const workoutVideos = {
     'squats': {
       id: 'YaXPRqUwItQ',
       title: 'Perfect Squat Form',
@@ -101,8 +95,8 @@ function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
     }
   };
 
-  // Keyword groups for broader matching → single short video each
-  const keywordVideoMap = [
+// Keyword groups for broader matching → single short video each
+const keywordVideoMap = [
     { keywords: ['push'], video: workoutVideos['pushups'] },
     { keywords: ['squat','front_squat'], video: { id: 'YaXPRqUwItQ', title: 'Perfect Squat Form', duration: '0:52', description: 'Master the basic squat movement' } },
     { keywords: ['plank','side_plank'], video: workoutVideos['plank'] },
@@ -118,6 +112,12 @@ function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
     { keywords: ['hip_thrust','glute_bridge'], video: { id: 'SEdqd1n0cvg', title: 'Hip Thrust Basics', duration: '0:44', description: 'Glute-focused hip thrust tutorial' } },
     { keywords: ['kettlebell'], video: { id: 'rZ3k8JrjU1Q', title: 'Kettlebell Swing Basics', duration: '0:40', description: 'Safe kettlebell swing technique' } },
   ];
+
+function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videos, setVideos] = useState([]);
 
   const loadWorkoutVideos = useCallback(() => {
     setLoading(true);
@@ -155,7 +155,7 @@ function WorkoutVideoModal({ isOpen, onClose, workoutName }) {
 
     setVideos(uniqueVideos);
     setLoading(false);
-  }, [workoutName, workoutVideos, keywordVideoMap]);
+  }, [workoutName]);
 
   useEffect(() => {
     if (isOpen && workoutName) {
