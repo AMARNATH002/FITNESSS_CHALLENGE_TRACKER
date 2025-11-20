@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { Link } from "react-router-dom";
 
 function Login() {
@@ -15,14 +15,20 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/api/users/login", formData);
+      const res = await api.post("/users/login", formData);
+
       alert("Login successful! Welcome back! 💪");
-      sessionStorage.setItem('user', JSON.stringify(res.data.user));
-      sessionStorage.setItem('token', res.data.token);
 
+      sessionStorage.setItem("user", JSON.stringify(res.data.user));
+      sessionStorage.setItem("token", res.data.token);
 
-      const next = res.data.user?.accountRole === 'Admin' ? '/admin' :
-                   (res.data.user?.fitnessLevel ? '/challenges' : '/role');
+      const next =
+        res.data.user?.accountRole === "Admin"
+          ? "/admin"
+          : res.data.user?.fitnessLevel
+          ? "/challenges"
+          : "/role";
+
       window.location.href = next;
     } catch (error) {
       console.error(error);
@@ -33,10 +39,18 @@ function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-          <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>🔥</span>
-          <h2 style={{ margin: 0, fontSize: '1.8rem' }}>WELCOME BACK</h2>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "20px"
+          }}
+        >
+          <span style={{ fontSize: "1.5rem", marginRight: "10px" }}>🔥</span>
+          <h2 style={{ margin: 0, fontSize: "1.8rem" }}>WELCOME BACK</h2>
         </div>
+
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <input
@@ -62,10 +76,15 @@ function Login() {
             />
           </div>
 
-          <button type="submit" className="auth-btn">GET BACK TO TRAINING</button>
+          <button type="submit" className="auth-btn">
+            GET BACK TO TRAINING
+          </button>
         </form>
+
         <div style={{ marginTop: "12px", textAlign: "center" }}>
-          <Link to="/signup" className="auth-secondary-btn">Go to Signup</Link>
+          <Link to="/signup" className="auth-secondary-btn">
+            Go to Signup
+          </Link>
         </div>
       </div>
     </div>
