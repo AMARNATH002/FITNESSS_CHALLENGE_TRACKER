@@ -47,7 +47,8 @@ app.get("/api/test", (req, res) => {
 // -----------------------------
 // MONGODB CONNECTION
 // -----------------------------
-const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/fitness-tracker";
+// const mongoURI = process.env.MONGO_URI || "mongodb://localhost:27017/fitness-tracker";
+const mongoURI = process.env.MONGO_URI || "mongodb+srv://Amarnath:Amar2006@cluster0.onc48.mongodb.net/fitness-tracker";
 
 // Removed deprecated options (newParser, unifiedTopology)
 mongoose.connect(mongoURI)
