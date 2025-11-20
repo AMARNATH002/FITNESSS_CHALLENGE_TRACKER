@@ -10,14 +10,20 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://fitnessschallengetracker.vercel.app",
   "https://fitness-challenge-tracker.vercel.app",
-  "https://fitnesschallenge-tracker.vercel.app"
+  "https://fitnesschallenge-tracker.vercel.app",
+  /https:\/\/frontend-.*\.vercel\.app$/ // Preview deployments for this project
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    if (!origin) return callback(null, true);
+
+    const isAllowed = allowedOrigins.some((allowed) => {
+      if (allowed instanceof RegExp) return allowed.test(origin);
+      return allowed === origin;
+    });
+
+    if (isAllowed) return callback(null, true);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   methods: "GET,POST,PUT,DELETE",
