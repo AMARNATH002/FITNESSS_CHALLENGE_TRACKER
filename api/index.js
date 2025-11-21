@@ -72,6 +72,7 @@ const workoutCompletionSchema = new mongoose.Schema({
 });
 
 const WorkoutSchedule = mongoose.models.WorkoutSchedule || mongoose.model('WorkoutSchedule', workoutScheduleSchema);
+const WorkoutCompletion = mongoose.models.WorkoutCompletion || mongoose.model('WorkoutCompletion', workoutCompletionSchema);
 
 // User model
 const userSchema = new mongoose.Schema({
