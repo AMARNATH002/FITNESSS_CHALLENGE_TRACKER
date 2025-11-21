@@ -100,7 +100,11 @@ module.exports = async (req, res) => {
     // Connect to database
     await connectToDatabase();
 
-    const { pathname } = new URL(req.url, 'http://localhost');
+    const url = new URL(req.url, 'http://localhost');
+    const forwardedPath = url.searchParams.get('path');
+    const pathname = forwardedPath
+      ? `/api/${forwardedPath.startsWith('/') ? forwardedPath.slice(1) : forwardedPath}`
+      : url.pathname;
 
     // Route to different handlers based on path
     if (pathname.startsWith('/api/users/login')) {
