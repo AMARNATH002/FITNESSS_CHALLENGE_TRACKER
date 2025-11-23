@@ -93,6 +93,16 @@ const toTitle = (s = '') => s
   .toLowerCase()
   .replace(/\b\w/g, (c) => c.toUpperCase());
 
+// Map any stored fitness level/role text to one of our supported challenge keys
+const normalizeRole = (value = '') => {
+  const text = value.toString().trim().toLowerCase();
+  if (!text) return 'Beginner';
+  if (text.includes('master') || text.includes('advanced')) return 'Master';
+  if (text.includes('inter')) return 'Intermediate';
+  if (text.includes('begin')) return 'Beginner';
+  return 'Beginner';
+};
+
 function Challenges() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -149,7 +159,7 @@ function Challenges() {
     }
   };
 
-  const role = derivedRoleFromNav || user?.fitnessLevel || user?.role || "Beginner";
+  const role = normalizeRole(derivedRoleFromNav || user?.fitnessLevel || user?.role || "Beginner");
 
   const challenges = {
     Beginner: [
