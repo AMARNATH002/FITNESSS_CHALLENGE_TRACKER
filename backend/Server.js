@@ -8,6 +8,7 @@ const app = express();
 // Middleware
 const allowedOrigins = [
   "http://localhost:3000",
+  "https://fitnesss-challenge-tracker.vercel.app",
   "https://fitnessschallengetracker.vercel.app",
   "https://fitness-challenge-tracker.vercel.app",
   "https://fitnesschallenge-tracker.vercel.app",
