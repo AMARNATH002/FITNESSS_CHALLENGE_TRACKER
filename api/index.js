@@ -81,16 +81,6 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   accountRole: { type: String, default: 'User' },
   fitnessLevel: { type: String, default: 'Beginner' },
-  createdAt: { type: Date, default: Date.now }
-});
-
-// User model
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  accountRole: { type: String, default: 'User' },
-  fitnessLevel: { type: String, default: 'Beginner' },
   workouts: [{
     exercise: String,
     sets: Number,
@@ -220,50 +210,104 @@ module.exports = async (req, res) => {
         return res.status(201).json(savedSchedule);
       }
 
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     // Handle workout completion routes like /api/users/[id]/workouts
     if (pathname.match(/^\/api\/users\/[^\/]+\/workouts$/)) {
       const pathParts = pathname.split('/');
       const userId = pathParts[pathParts.length - 2];
 
+      console.log('Workout API called:', { method: req.method, userId, pathname });
+
       // Authenticate user
       const decoded = authenticate(req);
       if (!decoded) {
+        console.log('Authentication failed for workout API');
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
+      console.log('User authenticated:', decoded.id);
+
       if (req.method === 'GET') {
-        // Get all workouts for the user from User model
-        const user = await User.findById(userId);
-        if (!user) {
-          return res.status(404).json({ error: 'User not found' });
+        try {
+          // Get all workouts for the user from User model
+          console.log('Looking for user with ID:', userId);
+          const user = await User.findById(userId);
+          if (!user) {
+            console.log('User not found:', userId);
+            return res.status(404).json({ error: 'User not found' });
+          }
+          console.log('Found user:', user.name, 'Workouts count:', user.workouts?.length || 0);
+          
+          // Initialize workouts array and goals if they don't exist (for existing users)
+          let needsSave = false;
+          if (!user.workouts) {
+            user.workouts = [];
+            needsSave = true;
+          }
+          if (!user.goals) {
+            user.goals = {
+              dailyWorkouts: 1,
+              weeklyWorkouts: 5,
+              monthlyWorkouts: 20,
+              currentStreak: 0,
+              longestStreak: 0,
+              totalWorkouts: 0,
+              totalCaloriesBurned: 0
+            };
+            needsSave = true;
+          }
+          
+          if (needsSave) {
+            await user.save();
+            console.log('Initialized missing fields for user:', userId);
+          }
+          
+          return res.status(200).json(user.workouts || []);
+        } catch (dbError) {
+          console.error('Database error in GET workouts:', dbError);
+          return res.status(500).json({ error: 'Database error', details: dbError.message });
         }
-        return res.status(200).json(user.workouts || []);
       }
 
       if (req.method === 'POST') {
-        // Add a new workout to the user
-        const { exercise, sets, reps, completed, date, caloriesPerSet } = req.body;
+        try {
+          // Add a new workout to the user
+          const { exercise, sets, reps, completed, date, caloriesPerSet } = req.body;
+          console.log('Adding workout:', { exercise, sets, reps, completed, userId });
 
-        if (!exercise || !sets || !reps) {
-          return res.status(400).json({ error: 'Exercise, sets, and reps are required' });
+          if (!exercise || !sets || !reps) {
+            return res.status(400).json({ error: 'Exercise, sets, and reps are required' });
+          }
+
+          const user = await User.findById(userId);
+          if (!user) {
+            console.log('User not found for POST workout:', userId);
+            return res.status(404).json({ error: 'User not found' });
+          }
+
+          // Initialize workouts array if it doesn't exist
+          if (!user.workouts) {
+            user.workouts = [];
+          }
+
+          user.workouts.push({
+            exercise,
+            sets,
+            reps,
+            completed: completed || false,
+            date: date ? new Date(date) : new Date(),
+            caloriesPerSet: caloriesPerSet || 15
+          });
+
+          await user.save();
+          console.log('Workout saved successfully for user:', userId);
+          return res.status(201).json(user);
+        } catch (dbError) {
+          console.error('Database error in POST workout:', dbError);
+          return res.status(500).json({ error: 'Database error', details: dbError.message });
         }
-
-        const user = await User.findById(userId);
-        if (!user) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-
-        user.workouts.push({
-          exercise,
-          sets,
-          reps,
-          completed: completed || false,
-          date: date ? new Date(date) : new Date(),
-          caloriesPerSet: caloriesPerSet || 15
-        });
-
-        await user.save();
-        return res.status(201).json(user);
       }
 
       return res.status(405).json({ error: 'Method not allowed' });

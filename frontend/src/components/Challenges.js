@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import WorkoutVideoModal from './WorkoutVideoModal';
 
 // Reliable workout images from Pexels (working URLs)
@@ -158,10 +158,8 @@ function Challenges() {
         throw new Error("No authentication token found");
       }
 
-      const response = await axios.get(
-        `/api/users/${userId}/workouts`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      console.log('Making API call to load workouts for user:', userId);
+      const response = await api.get(`/users/${userId}/workouts`);
       const workouts = response.data || [];
       setAssignedWorkouts(workouts);
       
@@ -237,26 +235,18 @@ function Challenges() {
       alert(`Great job! You completed today's ${exercise}! 💪`);
       
       // Save workout to database
-      const token = sessionStorage.getItem('token');
-      await axios.post(
-        `/api/users/${user._id}/workouts`,
-        {
-          exercise,
-          sets,
-          reps,
-          completed: true,
-          date: new Date(),
-          caloriesPerSet: Math.floor(Math.random() * 20) + 10 // Random calories for demo
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      console.log('Saving workout for user:', user._id, 'Exercise:', exercise);
+      await api.post(`/users/${user._id}/workouts`, {
+        exercise,
+        sets,
+        reps,
+        completed: true,
+        date: new Date(),
+        caloriesPerSet: Math.floor(Math.random() * 20) + 10 // Random calories for demo
+      });
 
       // Update streak after workout completion
-      await axios.post(
-        `/api/users/${user._id}/update-streak`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post(`/users/${user._id}/update-streak`, {});
 
       // Update daily completions
       setDailyCompletions(prev => ({
