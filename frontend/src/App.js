@@ -72,16 +72,62 @@ function About() {
 
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(!!sessionStorage.getItem("user"));
-  const user = React.useMemo(() => {
-    try { return JSON.parse(sessionStorage.getItem('user') || 'null'); } catch { return null; }
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const initializeApp = () => {
+      try {
+        const storedUser = sessionStorage.getItem("user");
+        const token = sessionStorage.getItem("token");
+        
+        if (storedUser && token) {
+          const parsedUser = JSON.parse(storedUser);
+          if (parsedUser && parsedUser._id) {
+            setUser(parsedUser);
+            setIsLoggedIn(true);
+          } else {
+            // Invalid user data, clear storage
+            sessionStorage.removeItem("user");
+            sessionStorage.removeItem("token");
+          }
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Add a small delay to prevent flash
+    setTimeout(initializeApp, 100);
   }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
     setIsLoggedIn(false);
+    setUser(null);
     window.location.href = "/";
   };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        backgroundColor: '#1a1a1a',
+        color: 'white'
+      }}>
+        <div>Loading... 💪</div>
+      </div>
+    );
+  }
 
   return (
     <Router>

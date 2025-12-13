@@ -84,6 +84,35 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// User model
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  accountRole: { type: String, default: 'User' },
+  fitnessLevel: { type: String, default: 'Beginner' },
+  workouts: [{
+    exercise: String,
+    sets: Number,
+    reps: Number,
+    completed: { type: Boolean, default: false },
+    date: { type: Date, default: Date.now },
+    caloriesPerSet: { type: Number, default: 15 }
+  }],
+  goals: {
+    dailyWorkouts: { type: Number, default: 1 },
+    weeklyWorkouts: { type: Number, default: 5 },
+    monthlyWorkouts: { type: Number, default: 20 },
+    currentStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    totalWorkouts: { type: Number, default: 0 },
+    totalCaloriesBurned: { type: Number, default: 0 }
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
 // Main API router
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -101,18 +130,33 @@ module.exports = async (req, res) => {
     await connectToDatabase();
 
     const url = new URL(req.url, 'http://localhost');
-    const forwardedPath = url.searchParams.get('path');
-    const pathname = forwardedPath
-      ? `/api/${forwardedPath.startsWith('/') ? forwardedPath.slice(1) : forwardedPath}`
-      : url.pathname;
+    const pathname = url.pathname;
+
+    console.log('API Request:', req.method, pathname);
+
+    // Test route
+    if (pathname === '/api/test') {
+      return res.status(200).json({ 
+        message: 'API Test OK! Backend connected successfully.',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Root API route
+    if (pathname === '/api' || pathname === '/api/') {
+      return res.status(200).json({ 
+        message: '🚀 Fitness Challenge Tracker API is running on Vercel!',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Route to different handlers based on path
-    if (pathname.startsWith('/api/users/login')) {
+    if (pathname === '/api/users/login') {
       const loginHandler = require('./users/login.js');
       return loginHandler(req, res);
     }
 
-    if (pathname.startsWith('/api/users/signup')) {
+    if (pathname === '/api/users/signup') {
       const signupHandler = require('./users/signup.js');
       return signupHandler(req, res);
     }
@@ -188,31 +232,38 @@ module.exports = async (req, res) => {
       }
 
       if (req.method === 'GET') {
-        // Get all workout completions for the user
-        const workouts = await WorkoutCompletion.find({ userId: userId }).sort({ date: -1 });
-        return res.status(200).json(workouts);
+        // Get all workouts for the user from User model
+        const user = await User.findById(userId);
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        return res.status(200).json(user.workouts || []);
       }
 
       if (req.method === 'POST') {
-        // Record a new workout completion
+        // Add a new workout to the user
         const { exercise, sets, reps, completed, date, caloriesPerSet } = req.body;
 
         if (!exercise || !sets || !reps) {
           return res.status(400).json({ error: 'Exercise, sets, and reps are required' });
         }
 
-        const newWorkout = new WorkoutCompletion({
-          userId: userId,
+        const user = await User.findById(userId);
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        user.workouts.push({
           exercise,
           sets,
           reps,
-          completed: completed || true,
+          completed: completed || false,
           date: date ? new Date(date) : new Date(),
           caloriesPerSet: caloriesPerSet || 15
         });
 
-        const savedWorkout = await newWorkout.save();
-        return res.status(201).json(savedWorkout);
+        await user.save();
+        return res.status(201).json(user);
       }
 
       return res.status(405).json({ error: 'Method not allowed' });
@@ -230,9 +281,45 @@ module.exports = async (req, res) => {
       }
 
       if (req.method === 'POST') {
-        // Update user streak (this would typically update a User model field)
-        // For now, return success
-        return res.status(200).json({ message: 'Streak updated successfully' });
+        // Calculate and update user streak
+        const user = await User.findById(userId);
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        const completedWorkouts = user.workouts.filter(w => w.completed);
+        const today = new Date();
+        const sortedWorkouts = completedWorkouts.sort((a, b) => new Date(b.date) - new Date(a.date));
+        let currentStreak = 0;
+        let checkDate = new Date(today);
+        
+        for (let i = 0; i < sortedWorkouts.length; i++) {
+          const workoutDate = new Date(sortedWorkouts[i].date);
+          const daysDiff = Math.floor((checkDate - workoutDate) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff === 0 || daysDiff === 1) {
+            currentStreak++;
+            checkDate = new Date(workoutDate);
+          } else {
+            break;
+          }
+        }
+
+        // Update streak
+        user.goals.currentStreak = currentStreak;
+        if (currentStreak > user.goals.longestStreak) {
+          user.goals.longestStreak = currentStreak;
+        }
+
+        // Update total workouts and calories
+        user.goals.totalWorkouts = completedWorkouts.length;
+        user.goals.totalCaloriesBurned = completedWorkouts.reduce((sum, w) => sum + (w.caloriesPerSet || 0), 0);
+
+        await user.save();
+        return res.status(200).json({ 
+          currentStreak: user.goals.currentStreak, 
+          longestStreak: user.goals.longestStreak 
+        });
       }
 
       return res.status(405).json({ error: 'Method not allowed' });
@@ -292,11 +379,10 @@ module.exports = async (req, res) => {
     }
 
     // Default 404 for unmatched routes
-    res.status(404).json({ error: 'NOT_FOUND', message: 'Endpoint not found' });
-  }
+    res.status(404).json({ error: 'NOT_FOUND', message: 'Endpoint not found', path: pathname });
 
   } catch (error) {
     console.error('API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', message: error.message });
   }
 };

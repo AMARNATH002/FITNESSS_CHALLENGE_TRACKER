@@ -74,55 +74,62 @@ module.exports = async (req, res) => {
     // Connect to database
     await connectToDatabase();
 
-    const { name, email, password, accountRole, fitnessLevel } = req.body;
+    const { email, password } = req.body;
 
     // Validate required fields
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Verify password
+    let isValid = false;
+    try {
+      isValid = await bcrypt.compare(password, user.password);
+    } catch (_) {
+      isValid = false;
+    }
 
-    // Create new user
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword,
-      accountRole: accountRole === 'Admin' ? 'Admin' : 'User',
-      fitnessLevel: fitnessLevel || 'Beginner'
-    });
+    // Backward-compat: accept legacy plaintext passwords once and upgrade to hashed
+    if (!isValid && user.password === password) {
+      const newHash = await bcrypt.hash(password, 10);
+      user.password = newHash;
+      await user.save();
+      isValid = true;
+    }
 
-    const savedUser = await user.save();
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid password' });
+    }
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: savedUser._id, role: savedUser.accountRole },
+      { id: user._id, role: user.accountRole },
       process.env.JWT_SECRET || 'dev_secret',
       { expiresIn: '7d' }
     );
 
-    res.status(201).json({
+    res.status(200).json({
+      message: 'Login successful',
       user: {
-        _id: savedUser._id,
-        name: savedUser.name,
-        email: savedUser.email,
-        accountRole: savedUser.accountRole,
-        fitnessLevel: savedUser.fitnessLevel,
-        workouts: savedUser.workouts || [],
-        goals: savedUser.goals || {}
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        accountRole: user.accountRole,
+        fitnessLevel: user.fitnessLevel,
+        workouts: user.workouts,
+        goals: user.goals
       },
       token
     });
 
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

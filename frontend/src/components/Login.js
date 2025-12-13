@@ -17,22 +17,30 @@ function Login() {
     try {
       const res = await api.post("/users/login", formData);
 
+      if (!res.data || !res.data.user || !res.data.token) {
+        throw new Error("Invalid response from server");
+      }
+
       alert("Login successful! Welcome back! 💪");
 
       sessionStorage.setItem("user", JSON.stringify(res.data.user));
       sessionStorage.setItem("token", res.data.token);
 
-      const next =
-        res.data.user?.accountRole === "Admin"
-          ? "/admin"
-          : res.data.user?.fitnessLevel
-          ? "/challenges"
-          : "/role";
+      // Add a small delay to ensure sessionStorage is set
+      setTimeout(() => {
+        const next =
+          res.data.user?.accountRole === "Admin"
+            ? "/admin"
+            : res.data.user?.fitnessLevel
+            ? "/challenges"
+            : "/role";
 
-      window.location.href = next;
+        window.location.href = next;
+      }, 100);
     } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.error || "Invalid credentials");
+      console.error("Login error:", error);
+      const errorMessage = error.response?.data?.error || error.message || "Login failed. Please try again.";
+      alert(errorMessage);
     }
   };
 

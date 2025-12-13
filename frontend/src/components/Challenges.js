@@ -113,24 +113,51 @@ function Challenges() {
   const [dailyCompletions, setDailyCompletions] = useState({});
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedWorkoutName, setSelectedWorkoutName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const derivedRoleFromNav = location.state?.role;
 
   useEffect(() => {
     const userData = sessionStorage.getItem("user");
-    if (userData) {
+    const token = sessionStorage.getItem("token");
+    
+    console.log('Challenges component loading...', { userData: !!userData, token: !!token });
+    
+    if (userData && token) {
       try {
         const parsed = JSON.parse(userData);
+        console.log('Parsed user data:', parsed);
         setUser(parsed);
 
         // ✅ Load user's completed workouts from backend
-        loadUserCompleted(parsed._id);
-      } catch (_) {}
+        if (parsed._id) {
+          loadUserCompleted(parsed._id);
+        } else {
+          console.error('No user ID found');
+          setError('Invalid user data');
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        setError('Failed to load user data');
+        setLoading(false);
+      }
+    } else {
+      console.log('No user data or token, redirecting to login');
+      navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   const loadUserCompleted = async (userId) => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const token = sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
       const response = await axios.get(
         `/api/users/${userId}/workouts`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -156,6 +183,16 @@ function Challenges() {
       setCompletedWorkouts(completedExercises);
     } catch (error) {
       console.error("Error loading completed workouts:", error);
+      setError("Failed to load workouts. Please try refreshing the page.");
+      
+      // If it's an auth error, redirect to login
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -293,6 +330,53 @@ function Challenges() {
       default: return 30;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="challenges-container">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '50vh',
+          color: 'white'
+        }}>
+          <div>Loading your challenges... 💪</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="challenges-container">
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '50vh',
+          color: 'white',
+          textAlign: 'center'
+        }}>
+          <div style={{ marginBottom: '20px' }}>❌ {error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#ff6b35',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="challenges-container">
