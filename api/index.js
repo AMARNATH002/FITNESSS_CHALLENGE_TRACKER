@@ -462,14 +462,14 @@ module.exports = async (req, res) => {
       if (pathname === '/api/admin/workouts' && req.method === 'GET') {
         // Return mock workout catalog for now
         const mockWorkouts = [
-          { _id: '1', name: 'Push-ups', category: 'Strength', difficulty: 'Beginner' },
-          { _id: '2', name: 'Squats', category: 'Strength', difficulty: 'Beginner' },
-          { _id: '3', name: 'Plank', category: 'Core', difficulty: 'Beginner' },
-          { _id: '4', name: 'Burpees', category: 'Cardio', difficulty: 'Intermediate' },
-          { _id: '5', name: 'Pull-ups', category: 'Strength', difficulty: 'Master' },
-          { _id: '6', name: 'Mountain Climbers', category: 'Cardio', difficulty: 'Intermediate' },
-          { _id: '7', name: 'Deadlifts', category: 'Strength', difficulty: 'Master' },
-          { _id: '8', name: 'Jumping Jacks', category: 'Cardio', difficulty: 'Beginner' }
+          { _id: '1', name: 'Push-ups', category: 'Strength', difficulty: 'Beginner', description: 'Basic upper body exercise' },
+          { _id: '2', name: 'Squats', category: 'Strength', difficulty: 'Beginner', description: 'Lower body strength exercise' },
+          { _id: '3', name: 'Plank', category: 'Core', difficulty: 'Beginner', description: 'Core stability exercise' },
+          { _id: '4', name: 'Burpees', category: 'Cardio', difficulty: 'Intermediate', description: 'Full body cardio exercise' },
+          { _id: '5', name: 'Pull-ups', category: 'Strength', difficulty: 'Master', description: 'Advanced upper body exercise' },
+          { _id: '6', name: 'Mountain Climbers', category: 'Cardio', difficulty: 'Intermediate', description: 'Dynamic cardio exercise' },
+          { _id: '7', name: 'Deadlifts', category: 'Strength', difficulty: 'Master', description: 'Advanced strength exercise' },
+          { _id: '8', name: 'Jumping Jacks', category: 'Cardio', difficulty: 'Beginner', description: 'Basic cardio exercise' }
         ];
         return res.status(200).json(mockWorkouts);
       }
@@ -518,21 +518,28 @@ module.exports = async (req, res) => {
           '8': 'Jumping Jacks'
         };
 
-        // Add workouts to user
+        console.log('Workout assignment - User workouts before:', user.workouts?.length || 0);
+
+        // Add workouts to user (avoid duplicates)
         workoutIds.forEach(workoutId => {
           const workoutName = workoutNames[workoutId] || `Workout ${workoutId}`;
-          user.workouts.push({
-            exercise: workoutName,
-            sets: sets || 3,
-            reps: reps || 12,
-            completed: false,
-            date: new Date(),
-            caloriesPerSet: 15
-          });
+          
+          // Check if this workout is already assigned
+          const existingWorkout = user.workouts.find(w => w.exercise === workoutName && !w.completed);
+          if (!existingWorkout) {
+            user.workouts.push({
+              exercise: workoutName,
+              sets: sets || 3,
+              reps: reps || 12,
+              completed: false,
+              date: new Date(),
+              caloriesPerSet: 15
+            });
+          }
         });
 
         await user.save();
-        console.log('Workouts assigned successfully');
+        console.log('Workouts assigned successfully. Total workouts:', user.workouts.length);
         return res.status(200).json({ message: 'Workouts assigned successfully', user });
       }
 
