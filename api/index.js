@@ -369,6 +369,49 @@ module.exports = async (req, res) => {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // Handle user profile updates like /api/users/[id]
+    if (pathname.match(/^\/api\/users\/[^\/]+$/) && !pathname.includes('/workouts') && !pathname.includes('/update-streak')) {
+      const pathParts = pathname.split('/');
+      const userId = pathParts[pathParts.length - 1];
+
+      // Authenticate user
+      const decoded = authenticate(req);
+      if (!decoded) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      if (req.method === 'PUT') {
+        try {
+          const { fitnessLevel, name, email } = req.body;
+          console.log('Updating user profile:', userId, { fitnessLevel, name, email });
+
+          const user = await User.findById(userId);
+          if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+          }
+
+          // Only allow users to update their own profile or admins to update any profile
+          if (decoded.id !== userId && decoded.role !== 'Admin') {
+            return res.status(403).json({ error: 'Not authorized to update this user' });
+          }
+
+          // Update allowed fields
+          if (fitnessLevel) user.fitnessLevel = fitnessLevel;
+          if (name) user.name = name;
+          if (email) user.email = email;
+
+          await user.save();
+          console.log('User profile updated successfully');
+          return res.status(200).json(user);
+        } catch (dbError) {
+          console.error('Database error in PUT user:', dbError);
+          return res.status(500).json({ error: 'Database error', details: dbError.message });
+        }
+      }
+
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     // Handle community data routes like /api/community
     if (pathname.startsWith('/api/community')) {
       if (req.method === 'GET') {
@@ -391,32 +434,106 @@ module.exports = async (req, res) => {
       // Authenticate admin user
       const decoded = authenticate(req);
       if (!decoded) {
+        console.log('Admin route - no authentication');
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      // Check if user is admin (you may want to add an admin field to your User model)
-      const User = mongoose.models.User;
-      if (User) {
-        const currentUser = await User.findById(decoded.id);
-        if (!currentUser || currentUser.role !== 'Admin') {
-          return res.status(403).json({ error: 'Admin access required' });
-        }
+      console.log('Admin route accessed by user:', decoded.id);
+
+      // Check if user is admin
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      console.log('Current user role:', currentUser.accountRole);
+      
+      if (currentUser.accountRole !== 'Admin') {
+        return res.status(403).json({ error: 'Admin access required' });
       }
 
       if (pathname === '/api/admin/users' && req.method === 'GET') {
-        const User = mongoose.models.User;
-        const users = await User.find({}).select('-password');
+        console.log('Getting all users for admin');
+        const users = await User.find({ accountRole: { $ne: 'Admin' } }).select('-password');
+        console.log('Found users:', users.length);
         return res.status(200).json(users);
       }
 
       if (pathname === '/api/admin/workouts' && req.method === 'GET') {
-        const workouts = await WorkoutCompletion.find({}).populate('userId', 'name email');
-        return res.status(200).json(workouts);
+        // Return mock workout catalog for now
+        const mockWorkouts = [
+          { _id: '1', name: 'Push-ups', category: 'Strength', difficulty: 'Beginner' },
+          { _id: '2', name: 'Squats', category: 'Strength', difficulty: 'Beginner' },
+          { _id: '3', name: 'Plank', category: 'Core', difficulty: 'Beginner' },
+          { _id: '4', name: 'Burpees', category: 'Cardio', difficulty: 'Intermediate' },
+          { _id: '5', name: 'Pull-ups', category: 'Strength', difficulty: 'Master' },
+          { _id: '6', name: 'Mountain Climbers', category: 'Cardio', difficulty: 'Intermediate' },
+          { _id: '7', name: 'Deadlifts', category: 'Strength', difficulty: 'Master' },
+          { _id: '8', name: 'Jumping Jacks', category: 'Cardio', difficulty: 'Beginner' }
+        ];
+        return res.status(200).json(mockWorkouts);
       }
 
       if (pathname === '/api/admin/diet-plans' && req.method === 'GET') {
-        // Return empty array for now - implement diet plans model if needed
-        return res.status(200).json([]);
+        // Return mock diet plans
+        const mockDietPlans = [
+          { _id: '1', name: 'Weight Loss Plan', goal: 'Weight Loss', difficulty: 'Beginner', description: 'Low calorie, high protein diet' },
+          { _id: '2', name: 'Muscle Gain Plan', goal: 'Muscle Gain', difficulty: 'Intermediate', description: 'High protein, moderate carbs' },
+          { _id: '3', name: 'Performance Plan', goal: 'Performance', difficulty: 'Master', description: 'Optimized for athletic performance' }
+        ];
+        return res.status(200).json(mockDietPlans);
+      }
+
+      // Handle workout assignment to users
+      if (pathname.match(/^\/api\/admin\/users\/[^\/]+\/assign-workouts$/) && req.method === 'POST') {
+        const pathParts = pathname.split('/');
+        const userId = pathParts[pathParts.length - 2];
+        const { workoutIds, sets, reps } = req.body;
+
+        console.log('Assigning workouts to user:', userId, 'Workouts:', workoutIds);
+
+        if (!workoutIds || !Array.isArray(workoutIds) || workoutIds.length === 0) {
+          return res.status(400).json({ error: 'workoutIds array is required' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Initialize workouts array if it doesn't exist
+        if (!user.workouts) {
+          user.workouts = [];
+        }
+
+        // Mock workout names based on IDs
+        const workoutNames = {
+          '1': 'Push-ups',
+          '2': 'Squats', 
+          '3': 'Plank',
+          '4': 'Burpees',
+          '5': 'Pull-ups',
+          '6': 'Mountain Climbers',
+          '7': 'Deadlifts',
+          '8': 'Jumping Jacks'
+        };
+
+        // Add workouts to user
+        workoutIds.forEach(workoutId => {
+          const workoutName = workoutNames[workoutId] || `Workout ${workoutId}`;
+          user.workouts.push({
+            exercise: workoutName,
+            sets: sets || 3,
+            reps: reps || 12,
+            completed: false,
+            date: new Date(),
+            caloriesPerSet: 15
+          });
+        });
+
+        await user.save();
+        console.log('Workouts assigned successfully');
+        return res.status(200).json({ message: 'Workouts assigned successfully', user });
       }
 
       return res.status(404).json({ error: 'Admin endpoint not found' });

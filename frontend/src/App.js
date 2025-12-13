@@ -180,11 +180,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/role" element={
-              <ProtectedRoute>
-                {user?.accountRole === 'Admin' ? <Home /> : <RoleSelect />}
-              </ProtectedRoute>
-            } />
+            <Route path="/role" element={<RoleSelect />} />
             <Route path="/challenges" element={
               <ProtectedRoute>
                 {user?.accountRole === 'Admin' ? <Home /> : <Challenges />}

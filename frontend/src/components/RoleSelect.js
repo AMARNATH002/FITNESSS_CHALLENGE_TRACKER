@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 
 function RoleSelect() {
   const navigate = useNavigate();
@@ -32,11 +32,7 @@ function RoleSelect() {
         const user = JSON.parse(storedUser);
         
         // Update in database
-        await axios.put(
-          `/api/users/${user._id}`,
-          { fitnessLevel },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.put(`/users/${user._id}`, { fitnessLevel });
         
         // Update local storage
         const updated = { ...user, fitnessLevel };
@@ -44,7 +40,13 @@ function RoleSelect() {
       }
       
       setTimeout(() => {
-        navigate("/challenges", { state: { role: fitnessLevel } });
+        // Check if user is logged in, if not go to home
+        const currentUser = sessionStorage.getItem('user');
+        if (currentUser) {
+          navigate("/challenges", { state: { role: fitnessLevel } });
+        } else {
+          navigate("/");
+        }
       }, 1000);
     } catch (error) {
       console.error("Error updating fitness level:", error);

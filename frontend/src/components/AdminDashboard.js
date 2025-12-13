@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import './AdminDashboard.css';
 import WorkoutVideoModal from './WorkoutVideoModal';
 
@@ -15,31 +15,44 @@ function AdminDashboard() {
   const [selectedWorkoutName, setSelectedWorkoutName] = useState('');
   const token = sessionStorage.getItem('token');
 
-  // Create API instance outside component to prevent recreation
-  const api = React.useMemo(() => axios.create({
-    baseURL: '',
-    headers: { Authorization: `Bearer ${token}` }
-  }), [token]);
+  // Remove the custom API instance since we're using the global one
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [u, w, d] = await Promise.all([
-        api.get('/api/admin/users?includeAdmins=false'),
-        api.get('/api/admin/workouts'),
-        api.get('/api/admin/diet-plans')
-      ]);
-      setUsers(u.data);
-      setWorkouts(w.data);
-      setDietPlans(d.data);
-      if (u.data.length) setSelectedUserId(u.data[0]._id);
+      // For now, let's load users and create mock data for workouts and diet plans
+      const usersResponse = await api.get('/admin/users');
+      setUsers(usersResponse.data || []);
+      
+      // Mock workout data until we implement the workout catalog
+      const mockWorkouts = [
+        { _id: '1', name: 'Push-ups', category: 'Strength', difficulty: 'Beginner' },
+        { _id: '2', name: 'Squats', category: 'Strength', difficulty: 'Beginner' },
+        { _id: '3', name: 'Plank', category: 'Core', difficulty: 'Beginner' },
+        { _id: '4', name: 'Burpees', category: 'Cardio', difficulty: 'Intermediate' },
+        { _id: '5', name: 'Pull-ups', category: 'Strength', difficulty: 'Master' },
+        { _id: '6', name: 'Mountain Climbers', category: 'Cardio', difficulty: 'Intermediate' },
+        { _id: '7', name: 'Deadlifts', category: 'Strength', difficulty: 'Master' },
+        { _id: '8', name: 'Jumping Jacks', category: 'Cardio', difficulty: 'Beginner' }
+      ];
+      setWorkouts(mockWorkouts);
+      
+      // Mock diet plans
+      const mockDietPlans = [
+        { _id: '1', name: 'Weight Loss Plan', goal: 'Weight Loss', difficulty: 'Beginner', description: 'Low calorie, high protein diet' },
+        { _id: '2', name: 'Muscle Gain Plan', goal: 'Muscle Gain', difficulty: 'Intermediate', description: 'High protein, moderate carbs' },
+        { _id: '3', name: 'Performance Plan', goal: 'Performance', difficulty: 'Master', description: 'Optimized for athletic performance' }
+      ];
+      setDietPlans(mockDietPlans);
+      
+      if (usersResponse.data?.length) setSelectedUserId(usersResponse.data[0]._id);
     } catch (e) {
-      console.error(e);
-      alert('Failed to load admin data');
+      console.error('Failed to load admin data:', e);
+      alert('Failed to load admin data: ' + (e.response?.data?.error || e.message));
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -95,10 +108,13 @@ function AdminDashboard() {
     }
     
     try {
-      await api.post(`/api/admin/users/${selectedUserId}/assign-workouts`, { workoutIds: finalWorkoutIds, sets: 3, reps: 12 });
+      await api.post(`/admin/users/${selectedUserId}/assign-workouts`, { workoutIds: finalWorkoutIds, sets: 3, reps: 12 });
       alert(`Successfully assigned ${finalWorkoutIds.length} workout(s) to ${selectedUser.name}`);
       setSelectedWorkoutIds([]);
+      // Reload data to show updated user workouts
+      loadData();
     } catch (e) {
+      console.error('Assign failed:', e);
       alert('Assign failed: ' + (e.response?.data?.error || e.message));
     }
   };
